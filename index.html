@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music</title>
+    <link rel="manifest" href="manifest.json"/>
+    <meta name="theme-color" content="#2981da">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2981da;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+        }
+        .file-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            background-color: #2981da;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1c6ab8;
+        }
+        .music-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .music-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .music-item h3 {
+            margin: 0;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-item audio {
+            width: 100%;
+        }
+        .music-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .music-controls button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Music</h1>
+        <div class="upload-section">
+            <h2>Upload Musik Baru</h2>
+            <div class="file-input">
+                <input type="file" id="music-upload" accept="audio/*">
+                <button id="upload-btn">Upload</button>
+            </div>
+        </div>
+        <div class="music-list" id="music-list"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const musicUpload = document.getElementById('music-upload');
+            const uploadBtn = document.getElementById('upload-btn');
+            const musicList = document.getElementById('music-list');
+            loadSavedMusic();
+            uploadBtn.addEventListener('click', function() {
+                const files = musicUpload.files;
+                if (files.length === 0) {
+                    alert('Silahkan pilih file musik terlebih dahulu!');
+                    return;
+                }
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!file.type.startsWith('audio/')) {
+                        alert('File harus berupa audio!');
+                        return;
+                    }
+                    saveMusic(file);
+                }
+                musicUpload.value = '';
+            });
+
+            function saveMusic(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const musicData = {
+                        name: file.name,
+                        data: e.target.result,
+                        date: new Date().toISOString()
+                    };
+                    let savedMusic = JSON.parse(localStorage.getItem('music-storage') || '[]');
+                    savedMusic.push(musicData);
+                    localStorage.setItem('music-storage', JSON.stringify(savedMusic));
+                    addMusicToDisplay(musicData, savedMusic.length - 1);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function loadSavedMusic() {
+                const savedMusic = JSON.parse(localStorage.getItem('music-storage') || '[]');
+                savedMusic.forEach((music, index) => {
+                    addMusicToDisplay(music, index);
+                });
+            }
+
+            function addMusicToDisplay(music, index) {
+                const musicItem = document.createElement('div');
+                musicItem.className = 'music-item';
+                musicItem.innerHTML = `
+                    <h3>${music.name}</h3>
+                    <audio controls>
+                        <source src="${music.data}" type="audio/mpeg">
+                        Browser Anda tidak mendukung elemen audio.
+                    </audio>
+                    <div class="music-controls">
+                        <button class="play-btn">Mainkan</button>
+                        <button class="delete-btn" data-index="${index}">Hapus</button>
+                    </div>
+                `;
+                musicList.appendChild(musicItem);
+                const deleteBtn = musicItem.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', function() {
+                    if (confirm(`Apakah Anda yakin ingin menghapus ${music.name}?`)) {
+                        deleteMusic(index);
+                        musicItem.remove();
+                    }
+                });
+                const playBtn = musicItem.querySelector('.play-btn');
+                const audioElement = musicItem.querySelector('audio');
+                playBtn.addEventListener('click', function() {
+                    if (audioElement.paused) {
+                        document.querySelectorAll('audio').forEach(audio => {
+                            if (audio !== audioElement) {
+                                audio.pause();
+                            }
+                        });
+                        audioElement.play();
+                        playBtn.textContent = 'Jeda';
+                    } else {
+                        audioElement.pause();
+                        playBtn.textContent = 'Mainkan';
+                    }
+                });
+            }
+
+            function deleteMusic(index) {
+                let savedMusic = JSON.parse(localStorage.getItem('music-storage') || '[]');
+                savedMusic.splice(index, 1);
+                localStorage.setItem('music-storage', JSON.stringify(savedMusic));
+            }
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(function(registration) {
+                    console.log('Service worker terdaftar:', registration);
+                }).catch(function(error) {
+                    console.log('Gagal mendaftar service worker:', error);
+                });
+        }
+    </script>
+</body>
+</html>
