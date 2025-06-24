@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music</title>
     <link rel="manifest" href="manifest.json"/>
+    <link rel="icon" href="icon-192.png" type="image/png">
     <meta name="theme-color" content="#2981da">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * {
             box-sizing: border-box;
@@ -200,17 +203,16 @@
                 savedMusic.splice(index, 1);
                 localStorage.setItem('music-storage', JSON.stringify(savedMusic));
             }
-        });
 
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(function(registration) {
-                    console.log('Service worker terdaftar:', registration);
-                }).catch(function(error) {
-                    console.log('Gagal mendaftar service worker:', error);
-                });
-        }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function(registration) {
+                        console.log('Service worker terdaftar:', registration);
+                    }).catch(function(error) {
+                        console.log('Gagal mendaftar service worker:', error);
+                    });
+            }
+        });
     </script>
 </body>
 </html>
